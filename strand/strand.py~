@@ -9,7 +9,7 @@ import numpy
 import re
 
 import py_aligner
-#import pymaxent
+#import py_maxent
 from maxent import pymaxent
 
 from scipy.stats import stats
@@ -20,7 +20,7 @@ class StrandAligner:
     self.difference_threshold = difference_threshold
     # Minimum value for the confidence of the correlation between chunk lengths
     self.confidence_min = confidence_min
-    self.me_model = pymaxent.MaxentModel() #MaxentModel(1.0)
+    self.me_model = py_maxent.PyMaxent(1.0)
     self.tag_matcher = re.compile(r"^\[(START|END):([^\]]+)\]$", re.U)
     self.pa = py_aligner.PyAligner()
 
@@ -31,7 +31,7 @@ class StrandAligner:
     t_size = len(target_stream)
     if s_size == 0 or t_size == 0:
       print "One or more of the input streams are empty"
-      return ([], pymaxent.PyInstanceSet())
+      return ([], py_maxent.PyInstanceSet())
     # Compute the maximum deviation from the diagonal given the difference
     # percentage threshold
     max_difference = s_size + t_size
@@ -44,8 +44,6 @@ class StrandAligner:
     # divided by the maximum possible number of mismatched tokens
     difference_percentage = -float(alignment_cost)
     difference_percentage /= max_difference
-
-    print "Difference % :", difference_percentage
     
     # Lengths of aligned source and target chunks, used in computing Pearson's
     # coefficient
@@ -67,7 +65,7 @@ class StrandAligner:
     #print "Correlation: %0.3f, p-value: %0.6f" % (correlation, p_value)
 
     # Create the instance set and return
-    instance_set = pymaxent.PyInstanceSet()
+    instance_set = py_maxent.PyInstanceSet()
     (parallel_instance, non_parallel_instance) = ([], [])
     #parallel_instance.append(("p_value_t", p_value))
     parallel_instance.append(("corr_t", correlation))
@@ -83,55 +81,6 @@ class StrandAligner:
     instance_set.instances.append(non_parallel_instance)
     return (result, instance_set)
 
-  # Return a tuple (correlation, p_value, difference_percentage, n) for a pair of webpages
-  # n - number of non-markup chunks of unequal length
-  # s_size - number of chunks in source
-  # t_size - number of chunks in target
-  def get_similarity_metrics(self, source_stream, target_stream):
-    # Dimensions of the alignment grid
-    s_size = len(source_stream)
-    t_size = len(target_stream)
-    if s_size == 0 or t_size == 0:
-      print "One or more of the input streams are empty"
-      return ([], pymaxent.PyInstanceSet())
-    # Compute the maximum deviation from the diagonal given the difference
-    # percentage threshold
-    max_difference = s_size + t_size
-
-    (source, target) = self.tc_to_int(source_stream, target_stream)
-
-    (alignment_cost, alignment) = self.pa.align(source, target)
-    # print "Alignment cost: ", alignment_cost
-    # Compute the difference percentage: the total number of mismatched tokens
-    # divided by the maximum possible number of mismatched tokens
-    difference_percentage = -float(alignment_cost)
-    difference_percentage /= max_difference
-
-    # Lengths of aligned source and target chunks, used in computing Pearson's
-    # coefficient
-    (s_chunk_lengths, t_chunk_lengths) = ([], [])
-    result = []
-    n = 0 # number of aligned non-markup chunks of unequal lengths
-    for (s, t) in alignment:
-      if s >= 0 and t >= 0:
-        result.append((source_stream[s], target_stream[t]))
-        if source_stream[s].tc_type == TCType.CHUNK and target_stream[t].tc_type == TCType.CHUNK:
-          s_chunk_lengths.append(source_stream[s].chunk_len)
-          t_chunk_lengths.append(target_stream[t].chunk_len)
-          # print source_stream[s].chunk_len, target_stream[t].chunk_len
-          if source_stream[s].chunk_len != target_stream[t].chunk_len:
-              # if the text chunks are aligned but not equal in length
-              n += 1
-      elif s >= 0:
-        result.append((source_stream[s], None))
-      elif t >= 0:
-        result.append((None, target_stream[t]))
-    correlation, p_value = 0.0, 0.0
-
-    if len(s_chunk_lengths) > 0:
-      (correlation, p_value) = stats.pearsonr(s_chunk_lengths, t_chunk_lengths)
-    return (correlation, p_value, difference_percentage, n, s_size, t_size, alignment_cost)
-
   # Align two tag/chunk streams
   def align(self, source_stream, target_stream):
     #(alignment, instance_set) = self.create_instance_set(
@@ -145,6 +94,7 @@ class StrandAligner:
     # Compute the maximum deviation from the diagonal given the difference
     # percentage threshold
     max_difference = s_size + t_size
+
     (source, target) = self.tc_to_int(source_stream, target_stream)
 
     (alignment_cost, alignment) = self.pa.align(source, target)
@@ -254,9 +204,8 @@ class TagChunk:
     elif self.tc_type == TCType.END:
       return u"[END:%s]" % self.tag
     else:
-      return u"[CHUNK:".encode("utf-8") + self.chunk_data.encode("utf-8") + u"]".encode("utf-8")
+      return u"[CHUNK:" + self.chunk_data + u"]"
   def __repr__(self):
     return self.__str__()
   def __unicode__(self):
     return self.__str__()
-
