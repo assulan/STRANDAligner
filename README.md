@@ -11,7 +11,8 @@ algorithm:
 W. A. Gale and K. W. Church. A program for aligning sentences in
 bilingual corpora. Computational Linguistics, 19:75-102, March 1993.
 
-* NOTE* You might need sudo permissions for some of the below steps.
+NOTE: You might need sudo permissions for some of the below steps.
+
 # Installation prerequisites
 * pip install numpy
 * pip install cython

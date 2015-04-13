@@ -13,17 +13,18 @@ bilingual corpora. Computational Linguistics, 19:75-102, March 1993.
 
 * NOTE* You might need sudo permissions for some of the below steps.
 # Installation prerequisites
-1. pip install numpy
-2. pip install cython
-3. pip install beautifulsoup4
-4. sudo apt-get install libxml2-dev libxslt-dev python-dev
-5. pip install lxml
-6. apt-get install python-scipy
-7. checkout maxent from https://github.com/lzhang10/maxent.git
-8. cd into maxent folder
-9. follow the installation instructions here https://github.com/lzhang10/maxent/blob/master/INSTALL.
+* pip install numpy
+* pip install cython
+* pip install beautifulsoup4
+* sudo apt-get install libxml2-dev libxslt-dev python-dev
+* pip install lxml
+* apt-get install python-scipy
+* pip install nltk
+* checkout maxent from https://github.com/lzhang10/maxent.git
+* cd into maxent folder
+* follow the installation instructions here https://github.com/lzhang10/maxent/blob/master/INSTALL.
    This will install c++ maxent lib.
-10. cd into python dir within maxent, and follow installation instructions in README file.
+* cd into python dir within maxent, and follow installation instructions in README file.
 
 # Installation
 1. Checkout the project from git
