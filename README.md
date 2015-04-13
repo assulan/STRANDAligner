@@ -43,10 +43,7 @@ NOTE: You might need sudo permissions for some of the steps below.
 3. when the above commands completes the following will be created in 'data' directory:
 	* chunks_output directory - contains files 1.chunks, 2.chunks, etc. Each file contains lengths of aligned chunks from parallel texts.
 	* chunks_tagged_output directory - contains files 1.tagged_chunks, etc. Each file contains aligned chunks together with tags.
-	* df_percentage file
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; filename diff_strand diff_nu n M N alignment_cost
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 18. 0.0139534883721 0.0139534883721 12 109 106 3.0
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; etc.
+	* df_percentage file - contains data needed for learning algorithm used in our paper.
 	* strand_output directory - contains files 1.{en, kz}, etc. with chunks.
 
 # TODO
