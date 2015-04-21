@@ -23,6 +23,8 @@ from collections import Counter
 from segmenter import Segmenter
 from py_aligner import PyGaleChurchAligner
 
+# Target language code
+target_lang = ''
 
 def main():
     parser = optparse.OptionParser()
@@ -36,6 +38,9 @@ def main():
                         type="string", help="Location where to store tagged and aligned parallel pages")
     parser.add_option("-p", "--out-df", dest="out_df", default="df_percentage",
                         help="File name where difference percentage is stored (located in current dir)")
+
+    parser.add_option("-l", "--target-lang", default="kz",
+                        help="Target language code, e.g. kz, en, ru, etc.")
 
     (opts, args) = parser.parse_args()
     if opts.input_dir == "":
@@ -54,16 +59,23 @@ def main():
     if not os.path.exists(opts.chunks_tagged_dir):
         os.mkdir(opts.chunks_tagged_dir)
 
+    # Target language code
+    target_lang = opts.target_lang
+
     # List files in output dir
     files = os.listdir(opts.input_dir)
     en_files = [f for f in files if f.endswith("en")]
-    kz_files = [f for f in files if f.endswith("kz")]
+    kz_files = [f for f in files if f.endswith(target_lang)]
 
     df_percentage_file = open(opts.out_df, "w")
     df_percentage_file.write("filename diff_strand diff_nu n M N alignment_cost\n")
     for i, en_file in enumerate(en_files):
         fname = en_file[:-2]
-        kz_file = [f for f in kz_files if f.startswith(fname)][0]
+        try:
+            kz_file = [f for f in kz_files if f.startswith(fname)][0]
+        except IndexError:
+            print 'Error: Missing file %s for target language %s' % (fname, target_lang)
+            exit(1)
         (correlation, p_value, difference_percentage, n, N, M, Y, X, alignment_cost) = run_strand(en_file, kz_file, opts.input_dir, opts.output_dir, opts.chunks_dir, opts.chunks_tagged_dir)
         alignment_cost = -float(alignment_cost)
         df_percentage = (alignment_cost) / (M + N)
@@ -72,7 +84,7 @@ def main():
         if i % 1000 == 0:
             print "Processing file %i" % i
     df_percentage_file.close()
-    print "Done."
+    print "Done. OK."
 
 # Return set from list of tag chunks.
 def get_set(tag_chunks):
@@ -80,7 +92,7 @@ def get_set(tag_chunks):
     for line in tag_chunks:
         if line.startswith("[") and line.endswith("]"):
             # tag
-            myset.append(line.strip("\n").encode())
+            myset.append(line.strip("\n").encode('utf-8'))
     return Counter(myset)
 
 
@@ -100,20 +112,20 @@ def run_strand(file_en, file_kz, input_dir, out_dir, chunks_dir, chunks_tagged_d
   segmenter = Segmenter("English")
 
   webpages = [open(f, 'r').read() for f in [os.path.join(input_dir, file_en), os.path.join(input_dir, file_kz)]]
-  tag_chunks = {"en": None, "kz": None}
+  tag_chunks = {"en": None, target_lang: None}
   for i, webpage in enumerate(webpages):
     try:
       tagchunks = apply_parser(webpage, strand_parser)
       if i == 0:
         tag_chunks['en'] = tagchunks
       else:
-        tag_chunks['kz'] = tagchunks
+        tag_chunks[target_lang] = tagchunks
     except:
       print "Error parsing input file"
       return
 
   source_strand = tag_chunks["en"].split('\n')
-  target_strand = tag_chunks["kz"].split('\n')
+  target_strand = tag_chunks[target_lang].split('\n')
   source_set = get_set(source_strand)
   source_set_copy = source_set.copy()
   target_set = get_set(target_strand)
@@ -136,7 +148,7 @@ def run_strand(file_en, file_kz, input_dir, out_dir, chunks_dir, chunks_tagged_d
     sents = []
     if out_file.endswith("en"):
         sents = source_sents
-    elif out_file.endswith("kz"):
+    elif out_file.endswith(target_lang):
         sents = target_sents
     for s in sents:
       out.write(s + "\n")
@@ -160,7 +172,7 @@ def strand_extract_and_clean(strand_aligner, gc_aligner, source, target, source_
   # open file for writing tagged aligned output
   f_tagged_aligned = codecs.open(tagged_aligned_out_file, mode='w', encoding='utf-8')
   f_out = codecs.open(tagged_output_file, mode="w", encoding="utf-8")
-  f_out.write('length_kz,length_en\n')
+  f_out.write('length_%s,length_en\n' % target_lang)
   for (s, t) in alignment:
     # write tagged aligned data
     f_tagged_aligned.write("%s,%s\n" % (str(t).decode("utf-8"), str(s).decode("utf-8")))
